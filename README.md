@@ -464,7 +464,7 @@ If you use this SDK in your research, please cite:
   title  = {AEGIS DreamDojo Guard SDK: Runtime Safety Validation for Embodied AI World Models},
   author = {Kim, Kwangil and Kang, Seokju},
   year   = {2026},
-  url    = {https://github.com/yatav/aegis-dreamdojo-sdk},
+  url    = {https://github.com/kwangilkimkenny/dreamdojo-aegis-sdk},
   note   = {Yatav Inc. AEGIS Research}
 }
 ```

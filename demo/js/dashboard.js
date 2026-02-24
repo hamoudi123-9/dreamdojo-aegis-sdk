@@ -6,6 +6,7 @@ const MAX_LOG_ENTRIES = 50;
 export class Dashboard {
   constructor() {
     this.logEntries = [];
+    this.totalViolations = 0;
     this._initElements();
   }
 
@@ -73,6 +74,7 @@ export class Dashboard {
     // Only log violations
     for (const report of result.guardReports) {
       for (const v of report.violations) {
+        this.totalViolations++;
         this.logEntries.unshift({
           frame: frameIndex,
           guard: report.name,
@@ -83,7 +85,7 @@ export class Dashboard {
       }
     }
 
-    // Trim
+    // Trim display buffer (total count tracked separately)
     if (this.logEntries.length > MAX_LOG_ENTRIES) {
       this.logEntries.length = MAX_LOG_ENTRIES;
     }
@@ -111,11 +113,12 @@ export class Dashboard {
 
   _updateStats(frameIndex) {
     if (this.frameCounter) this.frameCounter.textContent = frameIndex;
-    if (this.violationCounter) this.violationCounter.textContent = this.logEntries.length;
+    if (this.violationCounter) this.violationCounter.textContent = this.totalViolations;
   }
 
   reset() {
     this.logEntries = [];
+    this.totalViolations = 0;
     this._updateGauge(0, RiskLevel.SAFE);
     for (const name of Object.keys(this.guardCards)) {
       const card = this.guardCards[name];

@@ -1,4 +1,4 @@
-// guards.js — AEGIS DreamDojo SDK Guard Logic (JS port from Rust)
+// guards.js — AIEGIS DreamDojo SDK Guard Logic (JS port from Rust)
 // Ported from: src/action_guard.rs, src/chain_guard.rs, src/types.rs, src/pipeline.rs
 
 // ─── Risk Levels ───

@@ -1,13 +1,11 @@
-// robot.js — 7-DOF Robot Arm with Three.js primitives
+// robot.js — 7-DOF Robot Arm with Three.js primitives (KUKA-style)
 import * as THREE from 'three';
 
-const JOINT_RADIUS = 0.08;
-const LINK_RADIUS = 0.04;
 const COLORS = {
-  base: 0x4a5568,
-  joint: 0x63b3ed,
-  link: 0xa0aec0,
-  gripper: 0x48bb78,
+  orange: 0xff6600,       // KUKA orange — joints
+  darkGray: 0x505050,     // Body / links (brighter)
+  medGray: 0x707070,      // Accent panels (brighter)
+  gripperGray: 0x6a6a6a,  // Gripper (brighter)
   violation: 0xff4444,
   ghost: 0x805ad5,
 };
@@ -17,39 +15,26 @@ export function createRobot(scene, options = {}) {
   const { ghost = false } = options;
   const root = new THREE.Group();
 
-  // Materials
-  const matBase = new THREE.MeshStandardMaterial({
-    color: COLORS.base,
-    metalness: 0.6,
-    roughness: 0.3,
-    transparent: ghost,
-    opacity: ghost ? 0.25 : 1,
-    wireframe: ghost,
-  });
-  const matJoint = new THREE.MeshStandardMaterial({
-    color: COLORS.joint,
-    metalness: 0.4,
-    roughness: 0.4,
-    transparent: ghost,
-    opacity: ghost ? 0.25 : 1,
-    wireframe: ghost,
-  });
-  const matLink = new THREE.MeshStandardMaterial({
-    color: COLORS.link,
-    metalness: 0.3,
-    roughness: 0.5,
-    transparent: ghost,
-    opacity: ghost ? 0.25 : 1,
-    wireframe: ghost,
-  });
-  const matGripper = new THREE.MeshStandardMaterial({
-    color: COLORS.gripper,
-    metalness: 0.3,
-    roughness: 0.5,
-    transparent: ghost,
-    opacity: ghost ? 0.25 : 1,
-    wireframe: ghost,
-  });
+  // ── Helper: create a MeshStandardMaterial with ghost support ──
+  function mat(color, metalness = 0.6, roughness = 0.3) {
+    return new THREE.MeshStandardMaterial({
+      color,
+      metalness,
+      roughness,
+      transparent: ghost,
+      opacity: ghost ? 0.25 : 1,
+      wireframe: ghost,
+    });
+  }
+
+  // Named material instances
+  const matBase    = mat(COLORS.darkGray, 0.7, 0.2);
+  const matJoint   = mat(COLORS.orange, 0.5, 0.25);
+  const matLink    = mat(COLORS.darkGray, 0.6, 0.25);
+  const matGripper = mat(COLORS.gripperGray, 0.5, 0.35);
+  const matAccent  = mat(COLORS.medGray, 0.5, 0.3);
+  const matOrangeAccent = mat(COLORS.orange, 0.5, 0.3);
+
   const matViolation = new THREE.MeshStandardMaterial({
     color: COLORS.violation,
     metalness: 0.2,
@@ -58,83 +43,264 @@ export function createRobot(scene, options = {}) {
     emissiveIntensity: 0.5,
   });
 
-  // ── Base platform ──
-  const baseMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.25, 0.1, 32),
-    matBase,
-  );
-  baseMesh.position.y = 0.05;
-  root.add(baseMesh);
+  // ══════════════════════════════════════════════════════════════
+  // ── BASE: Industrial pedestal ──
+  // ══════════════════════════════════════════════════════════════
 
-  // ── Joint 0: Base rotator (dim 0 = X, dim 1 = Y, dim 2 = Yaw) ──
+  const baseGroup = new THREE.Group();
+  baseGroup.position.y = 0;
+  root.add(baseGroup);
+
+  // Floor plate (square)
+  const floorPlate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.04, 0.5),
+    matBase.clone(),
+  );
+  floorPlate.position.y = 0.02;
+  baseGroup.add(floorPlate);
+
+  // Hexagonal pedestal column
+  const pedestal = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.17, 0.14, 6),
+    matBase.clone(),
+  );
+  pedestal.position.y = 0.04 + 0.07;
+  baseGroup.add(pedestal);
+
+  // Top flange ring
+  const flange = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.16, 0.02, 24),
+    matAccent.clone(),
+  );
+  flange.position.y = 0.18 + 0.01;
+  baseGroup.add(flange);
+
+  // Orange accent ring
+  const accentRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.155, 0.012, 8, 24),
+    matOrangeAccent.clone(),
+  );
+  accentRing.rotation.x = Math.PI / 2;
+  accentRing.position.y = 0.20;
+  baseGroup.add(accentRing);
+
+  // baseMesh reference (for compatibility — use the pedestal)
+  const baseMesh = pedestal;
+
+  // ══════════════════════════════════════════════════════════════
+  // ── JOINT 0: Base rotator ──
+  // ══════════════════════════════════════════════════════════════
+
   const joint0 = new THREE.Group();
-  joint0.position.set(0, 0.1, 0);
-  const j0Sphere = new THREE.Mesh(new THREE.SphereGeometry(JOINT_RADIUS, 16, 16), matJoint.clone());
-  joint0.add(j0Sphere);
+  joint0.position.set(0, 0.22, 0);
   root.add(joint0);
 
-  // ── Link 0→1 ──
+  // Orange housing box (main)
+  const j0Box = new THREE.Mesh(
+    new THREE.BoxGeometry(0.16, 0.10, 0.14),
+    matJoint.clone(),
+  );
+  joint0.add(j0Box);
+
+  // Dark side panels
+  const j0PanelL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.005, 0.08, 0.12),
+    matAccent.clone(),
+  );
+  j0PanelL.position.x = -0.083;
+  joint0.add(j0PanelL);
+
+  const j0PanelR = new THREE.Mesh(
+    new THREE.BoxGeometry(0.005, 0.08, 0.12),
+    matAccent.clone(),
+  );
+  j0PanelR.position.x = 0.083;
+  joint0.add(j0PanelR);
+
+  // ══════════════════════════════════════════════════════════════
+  // ── LINK 0: Upper arm segment ──
+  // ══════════════════════════════════════════════════════════════
+
   const link0 = new THREE.Mesh(
-    new THREE.CylinderGeometry(LINK_RADIUS, LINK_RADIUS, 0.4, 12),
+    new THREE.BoxGeometry(0.14, 0.40, 0.10),
     matLink.clone(),
   );
-  link0.position.y = 0.2;
+  link0.position.y = 0.22;
   joint0.add(link0);
 
-  // ── Joint 1: Shoulder (dim 3) ──
+  // Front panel accent
+  const l0Panel = new THREE.Mesh(
+    new THREE.BoxGeometry(0.10, 0.36, 0.005),
+    matAccent.clone(),
+  );
+  l0Panel.position.set(0, 0.22, 0.053);
+  joint0.add(l0Panel);
+
+  // Top/bottom ridges
+  const l0RidgeTop = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 0.015, 0.11),
+    matAccent.clone(),
+  );
+  l0RidgeTop.position.set(0, 0.42, 0);
+  joint0.add(l0RidgeTop);
+
+  const l0RidgeBot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 0.015, 0.11),
+    matAccent.clone(),
+  );
+  l0RidgeBot.position.set(0, 0.02, 0);
+  joint0.add(l0RidgeBot);
+
+  // ══════════════════════════════════════════════════════════════
+  // ── JOINT 1: Shoulder ──
+  // ══════════════════════════════════════════════════════════════
+
   const joint1 = new THREE.Group();
-  joint1.position.set(0, 0.4, 0);
-  const j1Sphere = new THREE.Mesh(new THREE.SphereGeometry(JOINT_RADIUS, 16, 16), matJoint.clone());
-  joint1.add(j1Sphere);
+  joint1.position.set(0, 0.44, 0);
   joint0.add(joint1);
 
-  // ── Link 1→2 ──
+  // Slightly smaller orange housing
+  const j1Box = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.09, 0.12),
+    matJoint.clone(),
+  );
+  joint1.add(j1Box);
+
+  // Front/back caps
+  const j1CapF = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 0.07, 0.005),
+    matAccent.clone(),
+  );
+  j1CapF.position.z = 0.063;
+  joint1.add(j1CapF);
+
+  const j1CapB = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 0.07, 0.005),
+    matAccent.clone(),
+  );
+  j1CapB.position.z = -0.063;
+  joint1.add(j1CapB);
+
+  // ══════════════════════════════════════════════════════════════
+  // ── LINK 1: Forearm segment ──
+  // ══════════════════════════════════════════════════════════════
+
   const link1 = new THREE.Mesh(
-    new THREE.CylinderGeometry(LINK_RADIUS * 0.9, LINK_RADIUS * 0.9, 0.35, 12),
+    new THREE.BoxGeometry(0.12, 0.35, 0.09),
     matLink.clone(),
   );
   link1.position.y = 0.175;
   joint1.add(link1);
 
-  // ── Joint 2: Elbow (dim 4) ──
+  // Side panel strip
+  const l1Strip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.005, 0.30, 0.07),
+    matAccent.clone(),
+  );
+  l1Strip.position.set(0.063, 0.175, 0);
+  joint1.add(l1Strip);
+
+  // ══════════════════════════════════════════════════════════════
+  // ── JOINT 2: Elbow ──
+  // ══════════════════════════════════════════════════════════════
+
   const joint2 = new THREE.Group();
   joint2.position.set(0, 0.35, 0);
-  const j2Sphere = new THREE.Mesh(new THREE.SphereGeometry(JOINT_RADIUS * 0.9, 16, 16), matJoint.clone());
-  joint2.add(j2Sphere);
   joint1.add(joint2);
 
-  // ── Link 2→gripper ──
+  // Smaller orange housing
+  const j2Box = new THREE.Mesh(
+    new THREE.BoxGeometry(0.11, 0.08, 0.10),
+    matJoint.clone(),
+  );
+  joint2.add(j2Box);
+
+  // Flange ring
+  const j2Flange = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.065, 0.065, 0.015, 16),
+    matAccent.clone(),
+  );
+  j2Flange.position.y = 0.04;
+  joint2.add(j2Flange);
+
+  // ══════════════════════════════════════════════════════════════
+  // ── LINK 2: Wrist segment ──
+  // ══════════════════════════════════════════════════════════════
+
   const link2 = new THREE.Mesh(
-    new THREE.CylinderGeometry(LINK_RADIUS * 0.7, LINK_RADIUS * 0.7, 0.25, 12),
+    new THREE.BoxGeometry(0.09, 0.20, 0.07),
     matLink.clone(),
   );
   link2.position.y = 0.125;
   joint2.add(link2);
 
-  // ── Gripper mount ──
+  // Wrist cylinder at end
+  const wristCyl = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16),
+    matAccent.clone(),
+  );
+  wristCyl.position.y = 0.23;
+  joint2.add(wristCyl);
+
+  // ══════════════════════════════════════════════════════════════
+  // ── GRIPPER: Industrial gripper ──
+  // ══════════════════════════════════════════════════════════════
+
   const gripperMount = new THREE.Group();
   gripperMount.position.set(0, 0.25, 0);
   joint2.add(gripperMount);
 
-  // Left finger (dim 5)
-  const fingerL = new THREE.Mesh(
-    new THREE.BoxGeometry(0.02, 0.12, 0.04),
+  // Gripper base plate
+  const gripperBase = new THREE.Mesh(
+    new THREE.BoxGeometry(0.10, 0.02, 0.06),
     matGripper.clone(),
   );
-  fingerL.position.set(-0.04, 0.06, 0);
+  gripperBase.position.y = 0.01;
+  gripperMount.add(gripperBase);
+
+  // Left finger (dim 5) — thicker industrial style
+  const fingerL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.025, 0.10, 0.05),
+    matGripper.clone(),
+  );
+  fingerL.position.set(-0.04, 0.07, 0);
   gripperMount.add(fingerL);
+
+  // Left finger orange tip
+  const tipL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.025, 0.02, 0.05),
+    matOrangeAccent.clone(),
+  );
+  tipL.position.y = 0.06;
+  fingerL.add(tipL);
 
   // Right finger (dim 6)
   const fingerR = new THREE.Mesh(
-    new THREE.BoxGeometry(0.02, 0.12, 0.04),
+    new THREE.BoxGeometry(0.025, 0.10, 0.05),
     matGripper.clone(),
   );
-  fingerR.position.set(0.04, 0.06, 0);
+  fingerR.position.set(0.04, 0.07, 0);
   gripperMount.add(fingerR);
+
+  // Right finger orange tip
+  const tipR = new THREE.Mesh(
+    new THREE.BoxGeometry(0.025, 0.02, 0.05),
+    matOrangeAccent.clone(),
+  );
+  tipR.position.y = 0.06;
+  fingerR.add(tipR);
 
   scene.add(root);
 
-  // Robot state object
+  // Pre-create cached materials for per-frame reuse (avoids memory leak)
+  const _cachedJointMats = [matJoint.clone(), matJoint.clone(), matJoint.clone()];
+  const _cachedGripperMats = [matGripper.clone(), matGripper.clone()];
+  const _cachedViolationMats = [
+    matViolation.clone(), matViolation.clone(), matViolation.clone(),  // joints
+    matViolation.clone(), matViolation.clone(),                        // fingers
+  ];
+
+  // Robot state object — API-compatible return
   return {
     root,
     joints: [joint0, joint1, joint2],
@@ -142,11 +308,13 @@ export function createRobot(scene, options = {}) {
     fingers: [fingerL, fingerR],
     gripperMount,
     baseMesh,
-    jointSpheres: [j0Sphere, j1Sphere, j2Sphere],
+    jointSpheres: [j0Box, j1Box, j2Box],   // housing boxes replace spheres
     materials: { matBase, matJoint, matLink, matGripper, matViolation },
-    // NaN effect particles
     nanParticles: null,
     _originalMaterials: new Map(),
+    _cachedJointMats,
+    _cachedGripperMats,
+    _cachedViolationMats,
   };
 }
 
@@ -193,7 +361,7 @@ export function applyAction(robot, action, violations = []) {
   robot.fingers[0].position.x = -0.02 - gripOpen5 * 0.06;
   robot.fingers[1].position.x = 0.02 + gripOpen6 * 0.06;
 
-  // Highlight violated joints
+  // Highlight violated joints (reuse cached materials to avoid memory leak)
   resetJointColors(robot);
   const violatedDims = new Set();
   for (const v of violations) {
@@ -202,28 +370,28 @@ export function applyAction(robot, action, violations = []) {
 
   // Map dimensions to visual joints
   if (violatedDims.has(0) || violatedDims.has(1) || violatedDims.has(2)) {
-    robot.jointSpheres[0].material = robot.materials.matViolation.clone();
+    robot.jointSpheres[0].material = robot._cachedViolationMats[0];
   }
   if (violatedDims.has(3)) {
-    robot.jointSpheres[1].material = robot.materials.matViolation.clone();
+    robot.jointSpheres[1].material = robot._cachedViolationMats[1];
   }
   if (violatedDims.has(4)) {
-    robot.jointSpheres[2].material = robot.materials.matViolation.clone();
+    robot.jointSpheres[2].material = robot._cachedViolationMats[2];
   }
   if (violatedDims.has(5)) {
-    robot.fingers[0].material = robot.materials.matViolation.clone();
+    robot.fingers[0].material = robot._cachedViolationMats[3];
   }
   if (violatedDims.has(6)) {
-    robot.fingers[1].material = robot.materials.matViolation.clone();
+    robot.fingers[1].material = robot._cachedViolationMats[4];
   }
 }
 
 function resetJointColors(robot) {
-  for (const s of robot.jointSpheres) {
-    s.material = robot.materials.matJoint.clone();
+  for (let i = 0; i < robot.jointSpheres.length; i++) {
+    robot.jointSpheres[i].material = robot._cachedJointMats[i];
   }
-  robot.fingers[0].material = robot.materials.matGripper.clone();
-  robot.fingers[1].material = robot.materials.matGripper.clone();
+  robot.fingers[0].material = robot._cachedGripperMats[0];
+  robot.fingers[1].material = robot._cachedGripperMats[1];
 }
 
 // ── NaN Particles ──
@@ -276,24 +444,34 @@ export function updateNanParticles(robot, time) {
 /** Create a scene with lights and grid */
 export function createScene() {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a1a);
+  scene.background = new THREE.Color(0x1a1a2e);
 
-  // Ambient
-  scene.add(new THREE.AmbientLight(0x404060, 0.8));
+  // Ambient — stronger for overall brightness
+  scene.add(new THREE.AmbientLight(0x8888aa, 1.2));
 
-  // Directional
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  // Main directional light — brighter
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
   dirLight.position.set(3, 5, 3);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
+  // Fill light from opposite side
+  const fillLight = new THREE.DirectionalLight(0xaabbff, 0.6);
+  fillLight.position.set(-3, 3, -2);
+  scene.add(fillLight);
+
   // Point light for warm fill
-  const pointLight = new THREE.PointLight(0x6366f1, 0.5, 10);
+  const pointLight = new THREE.PointLight(0x6366f1, 0.6, 10);
   pointLight.position.set(-2, 3, 1);
   scene.add(pointLight);
 
+  // Rim light from behind for edge definition
+  const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  rimLight.position.set(0, 2, -4);
+  scene.add(rimLight);
+
   // Grid helper
-  const grid = new THREE.GridHelper(4, 20, 0x1a1a3a, 0x1a1a3a);
+  const grid = new THREE.GridHelper(4, 20, 0x2a2a4a, 0x2a2a4a);
   scene.add(grid);
 
   return scene;

